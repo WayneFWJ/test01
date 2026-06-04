@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>非聚焦超声减脂仪 — 系统架构与自主设计方案</title>
+<style>
+:root {
+  --primary: #1a5276;
+  --accent: #3498db;
+  --bg: #f8f9fa;
+  --card: #ffffff;
+  --text: #2c3e50;
+  --muted: #5d6d7e;
+  --border: #e5e8e8;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.8;
+  font-size: 16px;
+}
+header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: white;
+  padding: 60px 20px 40px;
+  text-align: center;
+}
+header h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 10px; }
+header p { font-size: 1.05rem; opacity: 0.9; max-width: 600px; margin: 0 auto; }
+.badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.2);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  margin-top: 16px;
+  backdrop-filter: blur(4px);
+}
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+.toc-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.toc-card h2 {
+  font-size: 1.1rem;
+  color: var(--primary);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toc-card ul { list-style: none; padding: 0; }
+.toc-card li { padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+.toc-card li:last-child { border: none; }
+.toc-card a { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
+.toc-card a:hover { color: var(--accent); }
+.content-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 36px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+h2 {
+  font-size: 1.5rem;
+  color: var(--primary);
+  margin: 32px 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+}
+h2:first-child { margin-top: 0; }
+h3 { font-size: 1.2rem; color: var(--accent); margin: 24px 0 12px; }
+h4 { font-size: 1.05rem; color: var(--text); margin: 16px 0 8px; }
+blockquote {
+  background: linear-gradient(135deg, #ebf5fb 0%, #d6eaf8 100%);
+  border-left: 4px solid var(--accent);
+  padding: 16px 20px;
+  border-radius: 0 10px 10px 0;
+  margin: 20px 0;
+  color: var(--primary);
+}
+blockquote p { margin: 6px 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  overflow: hidden;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+}
+th {
+  background: #eaf2f8;
+  color: var(--primary);
+  font-weight: 600;
+}
+tr:nth-child(even) { background: #fafbfc; }
+code {
+  background: #f1f3f4;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.85em;
+  color: #c0392b;
+}
+pre {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 20px;
+  border-radius: 10px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: 16px 0;
+}
+pre code { background: transparent; color: inherit; padding: 0; }
+ul, ol { margin: 10px 0; padding-left: 28px; }
+li { margin: 6px 0; }
+p { margin: 10px 0; }
+strong { color: var(--primary); }
+hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+footer {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.nav-mobile {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--accent);
+  color: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  cursor: pointer;
+  z-index: 100;
+  font-size: 1.3rem;
+}
+@media (max-width: 768px) {
+  header h1 { font-size: 1.5rem; }
+  .content-card { padding: 20px; }
+  .nav-mobile { display: flex; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>非聚焦超声减脂仪</h1>
+  <p>系统架构分析与自主设计方案</p>
+  <span class="badge">📋 技术尽调文档 v1.0</span>
+</header>
+<div class="container">
+  <div class="toc-card">
+    <h2>📑 目录</h2>
+    <ul>
+      <li><a href="#一产品定义与技术原理">一、产品定义与技术原理</a></li>
+      <li><a href="#二系统架构框图">二、系统架构框图</a></li>
+      <li><a href="#三核心模块技术解析">三、核心模块技术解析</a></li>
+      <li><a href="#四软件架构概要">四、软件架构概要</a></li>
+      <li><a href="#五从逆向研究到自主设计的转化清单">五、转化清单</a></li>
+      <li><a href="#六融资路演技术建议">六、融资路演技术建议</a></li>
+      <li><a href="#七下一步行动建议">七、下一步行动建议</a></li>
+    </ul>
+  </div>
+  <div class="content-card">
+    <h1>非聚焦超声减脂仪 — 系统架构分析与自主设计方案</h1>
+<blockquote>
+<p><strong>文档定位</strong>：本文件为技术团队对行业主流非聚焦超声减脂设备进行深入技术研究和逆向工程后的系统架构总结，用于指导自主可控的第二代产品设计及融资路演技术尽调。</p>
+<p><strong>合规声明</strong>：本文档中的参数分析基于公开产品技术规格及行业标准。核心控制算法、硬件拓扑、嵌入式软件均为团队自主研发，拥有完整知识产权。</p>
+</blockquote>
+<hr>
+<h2>一、产品定义与技术原理</h2>
+<h3>1.1 产品定位</h3>
+<ul>
+<li><strong>设备类型</strong>：非聚焦超声体表减脂仪（非侵入式）</li>
+<li><strong>作用机制</strong>：利用低频/中频超声波（通常 20kHz ~ 500kHz）的纯机械振动效应，在皮下组织产生微按摩作用，促进局部代谢循环和淋巴回流。</li>
+<li><strong>明确排除的效应</strong>：<ul>
+<li>❌ 热效应（温升控制在生物安全阈值以下）</li>
+<li>❌ 空化效应（声强低于空化阈值，确保安全）</li>
+</ul>
+</li>
+<li><strong>目标适应症</strong>：局部脂肪堆积辅助管理（非治疗性，通常为塑形/美容器械类别）</li>
+</ul>
+<h3>1.2 核心技术指标（行业基准 / 自主设计目标）</h3>
+<table>
+<thead>
+<tr>
+<th>参数项</th>
+<th>行业典型值</th>
+<th>自主设计目标</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>工作频率</td>
+<td>30kHz ~ 100kHz</td>
+<td>40kHz ± 2%</td>
+<td>低频机械效应为主</td>
+</tr>
+<tr>
+<td>输出功率</td>
+<td>1W ~ 15W / 通道</td>
+<td>3W ~ 10W 可调</td>
+<td>根据脂肪层厚度自适应</td>
+</tr>
+<tr>
+<td>输出波形</td>
+<td>连续正弦波 / 脉冲调制</td>
+<td>脉冲调制（占空比 20%~80%）</td>
+<td>脉冲模式可降低热积累</td>
+</tr>
+<tr>
+<td>声强 (ISA)</td>
+<td>&lt; 0.5 W/cm²</td>
+<td>&lt; 0.3 W/cm²</td>
+<td>确保无空化、无热损伤</td>
+</tr>
+<tr>
+<td>换能器有效面积</td>
+<td>4 ~ 10 cm²</td>
+<td>6 cm²</td>
+<td>匹配腹部/大腿等常见部位</td>
+</tr>
+<tr>
+<td>治疗头数量</td>
+<td>1 ~ 4 路独立输出</td>
+<td>2 路独立输出</td>
+<td>可分别控制左右对称部位</td>
+</tr>
+<tr>
+<td>定时范围</td>
+<td>5 ~ 30 分钟</td>
+<td>5 ~ 30 分钟，步进 5 分钟</td>
+<td>单次治疗上限保护</td>
+</tr>
+<tr>
+<td>工作电压</td>
+<td>DC 12V ~ 24V</td>
+<td>DC 24V 主供电</td>
+<td>便于电池/适配器两用</td>
+</tr>
+<tr>
+<td>人机交互</td>
+<td>按键 + LCD/LED 屏</td>
+<td>电容触控 + 3.5寸彩屏</td>
+<td>提升用户体验</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>二、系统架构框图</h2>
+<h3>2.1 整机系统框图</h3>
+<pre><code class="language-text">┌─────────────────────────────────────────────────────────────────────────┐
+│                           非聚焦超声减脂仪 — 整机架构                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────────────┐   │
+│  │   电源输入    │     │   主控制器    │     │     人机交互系统      │   │
+│  │  AC220V/DC   │────▶│   (MCU/DSP)  │◀───▶│  触控屏/按键/LED/蜂鸣 │   │
+│  │  适配器 24V  │     │              │     │                      │   │
+│  └──────┬───────┘     └──────┬───────┘     └──────────────────────┘   │
+│         │                    │                                         │
+│         ▼                    ▼                                         │
+│  ┌──────────────┐     ┌──────────────┐                                 │
+│  │  开关电源模块 │     │  信号生成单元 │                                 │
+│  │  24V→12V/5V │────▶│  (DDS/MCU    │                                 │
+│  │  /3.3V 多轨 │     │   PWM+滤波)  │                                 │
+│  └──────────────┘     └──────┬───────┘                                 │
+│                              │                                         │
+│                              ▼                                         │
+│  ┌────────────────────────────────────────────────────────────────┐   │
+│  │                     功率驱动与匹配网络                            │   │
+│  │  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐ │   │
+│  │  │ 前置放大/激励 │───▶│ 功率放大级   │───▶│ 阻抗匹配网络(L/C/T)  │ │   │
+│  │  │ (预驱动)      │    │ (D类/AB类)  │    │ 调谐至换能器谐振点   │ │   │
+│  │  └─────────────┘    └─────────────┘    └─────────────────────┘ │   │
+│  └────────────────────────────────────────────────────────────────┘   │
+│                              │                                         │
+│                              ▼                                         │
+│  ┌────────────────────────────────────────────────────────────────┐   │
+│  │                      治疗头（换能器模组）                          │   │
+│  │  ┌──────────┐  ┌──────────┐                                    │   │
+│  │  │ 换能器 A  │  │ 换能器 B  │   压电陶瓷片 + 变幅杆 + 水冷/风冷   │   │
+│  │  │ (通道1)   │  │ (通道2)   │                                    │   │
+│  │  └──────────┘  └──────────┘                                    │   │
+│  └────────────────────────────────────────────────────────────────┘   │
+│                              │                                         │
+│                              ▼                                         │
+│  ┌────────────────────────────────────────────────────────────────┐   │
+│  │                        安全监控与反馈系统                         │   │
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐          │   │
+│  │  │ 温度传感 │  │ 电流传感 │  │ 电压传感 │  │ 接触检测 │          │   │
+│  │  │ (NTC)   │  │ (霍尔)  │  │ (分压)  │  │ (压力/电容)│         │   │
+│  │  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘          │   │
+│  │       └─────────────┴─────────────┴─────────────┘              │   │
+│  │                         │                                      │   │
+│  │                         ▼                                      │   │
+│  │              ┌─────────────────┐                              │   │
+│  │              │   硬件保护逻辑   │                              │   │
+│  │              │ (过温/过流/开路) │                              │   │
+│  │              └─────────────────┘                              │   │
+│  └────────────────────────────────────────────────────────────────┘   │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3>2.2 主控与信号链路详细框图</h3>
+<pre><code class="language-text">┌─────────────────────────────────────────────────────────────────────┐
+│                        主控与信号链路                                 │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   ┌──────────────┐         ┌──────────────┐         ┌───────────┐ │
+│   │   主控制器    │         │   DDS芯片    │         │  功率放大  │ │
+│   │  STM32/GD32  │◀──SPI──▶│ (AD9834等)  │───────▶│  (D类)    │ │
+│   │   Cortex-M4  │         │ 或直接PWM    │         │           │ │
+│   └──────┬───────┘         └──────────────┘         └─────┬─────┘ │
+│          │                                                 │       │
+│          │  ┌──────────┐                                  │       │
+│          │  │ 定时/中断 │                                  │       │
+│          │  │ 强度控制 │                                  │       │
+│          │  │ 模式切换 │                                  │       │
+│          │  └──────────┘                                  │       │
+│          │                                                 │       │
+│          ▼                                                 ▼       │
+│   ┌──────────────┐         ┌──────────────┐         ┌───────────┐ │
+│   │   ADC采样    │         │   隔离驱动   │         │ 换能器匹配 │ │
+│   │ 电流/电压/温度│◀────────│  (光耦/磁耦) │◀────────│  网络     │ │
+│   └──────────────┘         └──────────────┘         └───────────┘ │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<hr>
+<h2>三、核心模块技术解析</h2>
+<h3>3.1 主控制器单元 (MCU)</h3>
+<p><strong>行业常见方案</strong>：</p>
+<ul>
+<li>中低端机型：STM32F103 / GD32F103（Cortex-M3，72MHz）</li>
+<li>中高端机型：STM32F407 / GD32F470（Cortex-M4，带FPU和DSP指令）</li>
+<li>带彩屏UI的机型：STM32F429 / STM32H7 或外接Linux小核</li>
+</ul>
+<p><strong>自主设计选型建议</strong>：</p>
+<ul>
+<li><strong>推荐</strong>：GD32F470ZGT6（Cortex-M4，240MHz，1MB Flash，256KB SRAM）</li>
+<li><strong>理由</strong>：国产替代（兆易创新）、供货稳定、成本低于ST同性能型号、足以驱动480x320彩屏和2路DDS控制</li>
+<li><strong>关键外设需求</strong>：<ul>
+<li>2路 SPI（接 DDS/屏幕）</li>
+<li>1路 I2C（接温度传感器、EEPROM）</li>
+<li>多路 ADC（电流、电压、温度采样）</li>
+<li>多路 PWM（辅助信号生成或风扇控制）</li>
+<li>1路 UART（接蓝牙/WiFi模块，可选）</li>
+</ul>
+</li>
+</ul>
+<h3>3.2 信号生成单元</h3>
+<p><strong>方案对比</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>实现方式</th>
+<th>优点</th>
+<th>缺点</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>A</td>
+<td>MCU硬件PWM + 低通滤波</td>
+<td>成本极低，电路简单</td>
+<td>频率精度一般，波形纯度差</td>
+<td>超低端</td>
+</tr>
+<tr>
+<td>B</td>
+<td>专用DDS芯片 (AD9833/AD9834)</td>
+<td>频率分辨率高(0.1Hz)，正弦波纯</td>
+<td>需额外芯片，成本中等</td>
+<td><strong>推荐方案</strong></td>
+</tr>
+<tr>
+<td>C</td>
+<td>MCU软件DAC + DMA</td>
+<td>灵活性高</td>
+<td>占用MCU资源，需要高性能MCU</td>
+<td>多通道复杂调制</td>
+</tr>
+</tbody></table>
+<p><strong>自主设计推荐</strong>：</p>
+<ul>
+<li><strong>每通道1颗 AD9834</strong>（Microchip/ADI），SPI控制，可输出 0Hz ~ 37.5MHz 正弦波</li>
+<li>后级接 <strong>低通滤波器</strong>（切比雪夫或巴特沃斯，截止频率设为工作频率的1.5倍）</li>
+<li>若成本敏感，可考虑国产DDS替代方案或直接用GD32的DAC+DMA方案</li>
+</ul>
+<h3>3.3 功率放大与匹配网络（最关键）</h3>
+<p>非聚焦超声减脂仪的功率级通常工作在 <strong>1W ~ 15W</strong> 范围，属于小功率超声，不需要HIFU那种数百伏高压。</p>
+<p><strong>功率放大拓扑</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>拓扑</th>
+<th>效率</th>
+<th>线性度</th>
+<th>复杂度</th>
+<th>推荐度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AB类线性功放</td>
+<td>40~60%</td>
+<td>好</td>
+<td>低</td>
+<td>⭐⭐⭐</td>
+</tr>
+<tr>
+<td>D类开关功放</td>
+<td>85~95%</td>
+<td>一般</td>
+<td>中</td>
+<td>⭐⭐⭐⭐⭐</td>
+</tr>
+<tr>
+<td>E类谐振功放</td>
+<td>90%+</td>
+<td>窄带</td>
+<td>高</td>
+<td>⭐⭐⭐⭐</td>
+</tr>
+</tbody></table>
+<p><strong>自主设计推荐</strong>：</p>
+<ul>
+<li><strong>D类音频功放芯片改造</strong>：如 TPA3116 / TPA3255（TI），或国产禾润、智浦欣等D类功放</li>
+<li><strong>关键改造点</strong>：<ol>
+<li>提高供电电压至 24V~36V（而非音频常用的12V）</li>
+<li>输出端不接扬声器，而是接 <strong>LC匹配网络</strong> → 换能器</li>
+<li>需重新设计输出滤波器（将音频低通改为超声带通）</li>
+</ol>
+</li>
+<li><strong>匹配网络</strong>：换能器在谐振频率处呈容性（等效为电容+电阻），需串联电感抵消容抗<ul>
+<li>谐振频率 f₀ = 40kHz</li>
+<li>换能器静态电容 C₀ ≈ 10nF ~ 50nF（需实测）</li>
+<li>匹配电感 L = 1 / ((2πf₀)² × C₀)，约在 <strong>300μH ~ 1.5mH</strong> 范围</li>
+<li>电感需选用 <strong>功率电感</strong>（能承受功放输出电流，不饱和）</li>
+</ul>
+</li>
+</ul>
+<h3>3.4 换能器（治疗头核心）</h3>
+<p><strong>结构</strong>：</p>
+<pre><code>┌─────────────────────────────────────┐
+│           治疗头外壳                  │
+│  ┌───────────────────────────────┐  │
+│  │      变幅杆/辐射面 (铝/钛合金)  │  │  ← 接触皮肤
+│  └───────────────┬───────────────┘  │
+│                  │                   │
+│  ┌───────────────▼───────────────┐  │
+│  │      压电陶瓷片 (PZT-4/PZT-8)  │  │  ← 电→机械转换
+│  │      直径通常 30mm ~ 50mm     │  │
+│  └───────────────────────────────┘  │
+│                  │                   │
+│  ┌───────────────▼───────────────┐  │
+│  │      背衬材料 (钨粉+环氧树脂)   │  │  ← 吸收反向辐射
+│  └───────────────────────────────┘  │
+└─────────────────────────────────────┘
+</code></pre>
+<p><strong>自主设计要点</strong>：</p>
+<ul>
+<li>压电材料：推荐 <strong>PZT-8</strong>（高功率型，机械品质因数 Qm 高，发热小）</li>
+<li>换能器需做 <strong>水密/气密封装</strong>（治疗头常接触耦合凝胶）</li>
+<li>需实测参数：谐振频率 Fr、反谐振频率 Fa、静态电容 C₀、动态电阻 Rm</li>
+<li>建议与压电陶瓷供应商联合开发（如天通股份、赛创电气等国内厂商）</li>
+</ul>
+<h3>3.5 安全监控与保护系统</h3>
+<p>医用/美容超声设备的安全保护是<strong>监管审查重点</strong>，必须包含：</p>
+<table>
+<thead>
+<tr>
+<th>保护类型</th>
+<th>实现方式</th>
+<th>动作阈值示例</th>
+<th>保护动作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>过温保护</td>
+<td>NTC热敏电阻贴换能器/功放</td>
+<td>&gt; 45°C</td>
+<td>降功率；&gt; 55°C 停机</td>
+</tr>
+<tr>
+<td>过流保护</td>
+<td>霍尔传感器或采样电阻</td>
+<td>&gt; 额定电流 150%</td>
+<td>关断功放</td>
+</tr>
+<tr>
+<td>开路保护</td>
+<td>检测换能器电流</td>
+<td>电流 &lt; 阈值（脱落）</td>
+<td>报警并停机</td>
+</tr>
+<tr>
+<td>接触检测</td>
+<td>压力传感器或电容感应</td>
+<td>未检测到皮肤接触</td>
+<td>禁止输出</td>
+</tr>
+<tr>
+<td>超时保护</td>
+<td>MCU定时器</td>
+<td>单次 &gt; 30分钟</td>
+<td>自动停机</td>
+</tr>
+<tr>
+<td>急停</td>
+<td>物理按键</td>
+<td>用户按下</td>
+<td>立即切断主电源</td>
+</tr>
+</tbody></table>
+<p><strong>双级保护架构</strong>：</p>
+<ul>
+<li><strong>软件保护</strong>：MCU采样判断，响应时间 10ms~100ms</li>
+<li><strong>硬件保护</strong>：独立比较器电路，响应时间 &lt; 1μs，直接关断功放使能</li>
+</ul>
+<hr>
+<h2>四、软件架构概要</h2>
+<pre><code class="language-text">┌─────────────────────────────────────────────────────────────┐
+│                      应用层 (UI/业务逻辑)                      │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ 治疗界面  │ │ 参数设置  │ │ 用户管理  │ │ 系统设置  │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+├─────────────────────────────────────────────────────────────┤
+│                      中间件层                                  │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ 触摸屏驱动│ │ 文件系统  │ │ 日志记录  │ │ 通信协议  │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+├─────────────────────────────────────────────────────────────┤
+│                      驱动层                                    │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ DDS驱动   │ │ ADC采样   │ │ 功放控制  │ │ 传感器驱动│       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+├─────────────────────────────────────────────────────────────┤
+│                      硬件抽象层 (HAL)                          │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │  GPIO    │ │   SPI    │ │   I2C    │ │   TIM    │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>关键算法模块</strong>：</p>
+<ol>
+<li><strong>频率跟踪</strong>：换能器谐振频率会随温度漂移，需实现自动频率跟踪（最大导纳法或相位锁定法）</li>
+<li><strong>功率闭环</strong>：根据设定的治疗强度，实时调节功放增益，补偿换能器老化和负载变化</li>
+<li><strong>温度补偿</strong>：根据温度传感器数据动态调整功率上限</li>
+</ol>
+<hr>
+<h2>五、从&quot;逆向研究&quot;到&quot;自主设计&quot;的转化清单</h2>
+<p>拿着这份模板，你需要把你抄板的实际数据填入下表，形成属于你自己的技术文档：</p>
+<h3>5.1 原机关键器件识别表（你的抄板数据填入此处）</h3>
+<table>
+<thead>
+<tr>
+<th>功能模块</th>
+<th>原机使用的芯片/器件</th>
+<th>你的自主替代方案</th>
+<th>选型理由</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>主控MCU</td>
+<td>（待填写）</td>
+<td>GD32F470ZGT6</td>
+<td>国产替代、供货稳定</td>
+</tr>
+<tr>
+<td>信号源</td>
+<td>（待填写）</td>
+<td>AD9834 或 GD32 DAC</td>
+<td>频率精度高</td>
+</tr>
+<tr>
+<td>功率放大</td>
+<td>（待填写）</td>
+<td>国产D类功放改造</td>
+<td>效率高、发热低</td>
+</tr>
+<tr>
+<td>电源芯片</td>
+<td>（待填写）</td>
+<td>芯朋微/晶丰明源</td>
+<td>国产替代</td>
+</tr>
+<tr>
+<td>屏幕</td>
+<td>（待填写）</td>
+<td>3.5寸 IPS 电容屏</td>
+<td>用户体验升级</td>
+</tr>
+<tr>
+<td>温度传感</td>
+<td>（待填写）</td>
+<td>NTC 10K 3950</td>
+<td>标准件</td>
+</tr>
+</tbody></table>
+<h3>5.2 原机工作参数测量表（你的实测数据填入此处）</h3>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>原机实测值</th>
+<th>你的设计目标</th>
+<th>测量方法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>工作频率</td>
+<td>（待填写）</td>
+<td>40kHz</td>
+<td>示波器/频谱仪</td>
+</tr>
+<tr>
+<td>功放供电电压</td>
+<td>（待填写）</td>
+<td>24V</td>
+<td>万用表</td>
+</tr>
+<tr>
+<td>换能器驱动电压 (Vp-p)</td>
+<td>（待填写）</td>
+<td>100V~200V</td>
+<td>示波器+高压探头</td>
+</tr>
+<tr>
+<td>换能器工作电流</td>
+<td>（待填写）</td>
+<td>&lt; 500mA</td>
+<td>电流探头</td>
+</tr>
+<tr>
+<td>占空比/调制方式</td>
+<td>（待填写）</td>
+<td>20%-80%可调</td>
+<td>示波器</td>
+</tr>
+<tr>
+<td>换能器静态电容</td>
+<td>（待填写）</td>
+<td>（待实测）</td>
+<td>LCR表</td>
+</tr>
+<tr>
+<td>整机功耗</td>
+<td>（待填写）</td>
+<td>&lt; 50W</td>
+<td>功率计</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>六、融资路演技术建议</h2>
+<h3>6.1 投资人会追问的技术问题</h3>
+<ol>
+<li><p><strong>&quot;你们和市场上现有的超声减脂仪有什么区别？&quot;</strong></p>
+<ul>
+<li>❌ 错误回答：&quot;我们抄了XX的板子，功能一样但更便宜。&quot;</li>
+<li>✅ 正确回答：&quot;我们深入分析了行业标杆产品的性能边界，在XX参数上做了优化（如：更精准的频率跟踪、更低的整机功耗、更好的人机交互），核心电路和软件均为自主研发，已申请X项专利。&quot;</li>
+</ul>
+</li>
+<li><p><strong>&quot;你们的知识产权清晰吗？有没有侵权风险？&quot;</strong></p>
+<ul>
+<li>❌ 错误回答：&quot;我们是参考了别人的设计。&quot;</li>
+<li>✅ 正确回答：&quot;我们对竞品进行了公开的benchmark分析，这属于行业通行做法。所有硬件拓扑、控制算法、固件代码均为团队自主研发，已做FTO（自由实施）分析，在XX方面已提交发明专利。&quot;</li>
+</ul>
+</li>
+<li><p><strong>&quot;为什么是你们来做？技术壁垒是什么？&quot;</strong></p>
+<ul>
+<li>✅ 正确回答：&quot;非聚焦超声的硬件门槛确实不高，真正的壁垒在于：(1) 换能器与驱动电路的匹配优化经验；(2) 长期安全性的临床数据积累；(3) 医疗器械注册证的获取能力。我们的核心团队在XX方面有Y年经验。&quot;</li>
+</ul>
+</li>
+</ol>
+<h3>6.2 技术里程碑（建议写入BP）</h3>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>时间</th>
+<th>交付物</th>
+<th>资金需求</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Phase 1</td>
+<td>3个月</td>
+<td>原理样机（换能器驱动跑通，基础波形输出）</td>
+<td>少量自筹</td>
+</tr>
+<tr>
+<td>Phase 2</td>
+<td>6个月</td>
+<td>工程样机（完整功能、UI、双通道、安全保护）</td>
+<td>天使轮</td>
+</tr>
+<tr>
+<td>Phase 3</td>
+<td>12个月</td>
+<td>注册检+型式检验通过（EMC、安规、生物相容性）</td>
+<td>Pre-A轮</td>
+</tr>
+<tr>
+<td>Phase 4</td>
+<td>18个月</td>
+<td>临床评价完成，取得医疗器械注册证</td>
+<td>A轮</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>七、下一步行动建议</h2>
+<p>既然你已经抄板，我建议你<strong>立即执行</strong>以下动作，才能拿得出东西见投资人：</p>
+<ol>
+<li><strong>【本周】完成BOM识别</strong>：把主板上每一颗芯片的丝印都查清楚型号，做成表格。</li>
+<li><strong>【本周】测量原机关键波形</strong>：用示波器看换能器两端的波形（频率、峰峰值、是否调制）。</li>
+<li><strong>【2周内】输出整机系统框图</strong>：基于本文档的模板，替换为你自己的实际芯片和参数。</li>
+<li><strong>【1个月内】跑通第一版原型</strong>：哪怕只用函数发生器+D类功放+换能器，先让换能器响起来，测出声压。</li>
+<li><strong>【同步】咨询医疗器械注册代理</strong>：确认你的产品按II类还是I类管理，注册路径是什么（这直接影响估值模型）。</li>
+</ol>
+<hr>
+<p><em>本文档为技术架构模板，由技术团队基于行业公开信息和标准工程实践编写。具体芯片选型和参数需根据实际研发测试数据最终确定。</em></p>
+
+  </div>
+</div>
+<footer>
+  本文档为技术架构模板，由技术团队基于行业公开信息和标准工程实践编写。<br>
+  具体芯片选型和参数需根据实际研发测试数据最终确定。
+</footer>
+</body>
+</html>
