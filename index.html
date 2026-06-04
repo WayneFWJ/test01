@@ -166,6 +166,29 @@ footer {
   th, td { padding: 6px 8px; }
 }
 </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#eaf2f8',
+        primaryTextColor: '#1a5276',
+        primaryBorderColor: '#3498db',
+        lineColor: '#5d6d7e',
+        secondaryColor: '#f8f9f9',
+        tertiaryColor: '#ffffff',
+        fontFamily: 'Segoe UI, PingFang SC, Microsoft YaHei, sans-serif'
+      },
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis'
+      }
+    });
+  </script>
+
 </head>
 <body>
 <header>
@@ -273,84 +296,106 @@ footer {
 <hr>
 <h2>二、系统架构框图</h2>
 <h3>2.1 整机系统框图</h3>
-<pre><code class="language-text">┌─────────────────────────────────────────────────────────────────────────┐
-│                           非聚焦超声减脂仪 — 整机架构                       │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  ┌──────────────┐     ┌──────────────┐     ┌──────────────────────┐   │
-│  │   电源输入    │     │   主控制器    │     │     人机交互系统      │   │
-│  │  AC220V/DC   │────▶│   (MCU/DSP)  │◀───▶│  触控屏/按键/LED/蜂鸣 │   │
-│  │  适配器 24V  │     │              │     │                      │   │
-│  └──────┬───────┘     └──────┬───────┘     └──────────────────────┘   │
-│         │                    │                                         │
-│         ▼                    ▼                                         │
-│  ┌──────────────┐     ┌──────────────┐                                 │
-│  │  开关电源模块 │     │  信号生成单元 │                                 │
-│  │  24V→12V/5V │────▶│  (DDS/MCU    │                                 │
-│  │  /3.3V 多轨 │     │   PWM+滤波)  │                                 │
-│  └──────────────┘     └──────┬───────┘                                 │
-│                              │                                         │
-│                              ▼                                         │
-│  ┌────────────────────────────────────────────────────────────────┐   │
-│  │                     功率驱动与匹配网络                            │   │
-│  │  ┌─────────────┐    ┌─────────────┐    ┌─────────────────────┐ │   │
-│  │  │ 前置放大/激励 │───▶│ 功率放大级   │───▶│ 阻抗匹配网络(L/C/T)  │ │   │
-│  │  │ (预驱动)      │    │ (D类/AB类)  │    │ 调谐至换能器谐振点   │ │   │
-│  │  └─────────────┘    └─────────────┘    └─────────────────────┘ │   │
-│  └────────────────────────────────────────────────────────────────┘   │
-│                              │                                         │
-│                              ▼                                         │
-│  ┌────────────────────────────────────────────────────────────────┐   │
-│  │                      治疗头（换能器模组）                          │   │
-│  │  ┌──────────┐  ┌──────────┐                                    │   │
-│  │  │ 换能器 A  │  │ 换能器 B  │   压电陶瓷片 + 变幅杆 + 水冷/风冷   │   │
-│  │  │ (通道1)   │  │ (通道2)   │                                    │   │
-│  │  └──────────┘  └──────────┘                                    │   │
-│  └────────────────────────────────────────────────────────────────┘   │
-│                              │                                         │
-│                              ▼                                         │
-│  ┌────────────────────────────────────────────────────────────────┐   │
-│  │                        安全监控与反馈系统                         │   │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐          │   │
-│  │  │ 温度传感 │  │ 电流传感 │  │ 电压传感 │  │ 接触检测 │          │   │
-│  │  │ (NTC)   │  │ (霍尔)  │  │ (分压)  │  │ (压力/电容)│         │   │
-│  │  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘          │   │
-│  │       └─────────────┴─────────────┴─────────────┘              │   │
-│  │                         │                                      │   │
-│  │                         ▼                                      │   │
-│  │              ┌─────────────────┐                              │   │
-│  │              │   硬件保护逻辑   │                              │   │
-│  │              │ (过温/过流/开路) │                              │   │
-│  │              └─────────────────┘                              │   │
-│  └────────────────────────────────────────────────────────────────┘   │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-</code></pre>
+<div style="margin:24px 0;">
+<h4 style="color:#2874a6;margin-bottom:14px;">📐 整机系统框图</h4>
+<div class="mermaid">
+graph TB
+    subgraph POWER["⚡ 电源系统"]
+        A1[AC220V/DC适配器] --> A2[开关电源模块<br/>24V→12V/5V/3.3V]
+    end
+
+    subgraph CTRL["🧠 控制与信号"]
+        B1[主控制器<br/>STM32 / GD32] --> B2[信号生成单元<br/>DDS / PWM+滤波]
+        B1 <--> B3[人机交互系统<br/>触控屏 / 按键 / LED / 蜂鸣]
+    end
+
+    subgraph DRV["🔊 功率驱动与匹配"]
+        C1[前置放大 / 激励] --> C2[功率放大级<br/>D类 / AB类]
+        C2 --> C3[阻抗匹配网络<br/>LC调谐至换能器谐振点]
+    end
+
+    subgraph HEAD["💆 治疗头 — 换能器模组"]
+        D1[换能器 A<br/>通道 1]
+        D2[换能器 B<br/>通道 2]
+    end
+
+    subgraph SAFE["🛡️ 安全监控与反馈"]
+        E1[温度传感 NTC] --> E5[硬件保护逻辑]
+        E2[电流传感 霍尔] --> E5
+        E3[电压传感 分压] --> E5
+        E4[接触检测 压力/电容] --> E5
+    end
+
+    A2 --> B1
+    B2 --> C1
+    C3 --> D1
+    C3 --> D2
+    D1 -.反馈.-> E1
+    D1 -.反馈.-> E2
+    D2 -.反馈.-> E3
+    D2 -.反馈.-> E4
+    E5 -.保护动作.-> B1
+
+    style POWER fill:#fef9e7,stroke:#f39c12,stroke-width:2px
+    style CTRL fill:#ebf5fb,stroke:#3498db,stroke-width:2px
+    style DRV fill:#eafaf1,stroke:#27ae60,stroke-width:2px
+    style HEAD fill:#f5eef8,stroke:#9b59b6,stroke-width:2px
+    style SAFE fill:#fdedec,stroke:#e74c3c,stroke-width:2px
+</div>
+</div>
 <h3>2.2 主控与信号链路详细框图</h3>
-<pre><code class="language-text">┌─────────────────────────────────────────────────────────────────────┐
-│                        主控与信号链路                                 │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│   ┌──────────────┐         ┌──────────────┐         ┌───────────┐ │
-│   │   主控制器    │         │   DDS芯片    │         │  功率放大  │ │
-│   │  STM32/GD32  │◀──SPI──▶│ (AD9834等)  │───────▶│  (D类)    │ │
-│   │   Cortex-M4  │         │ 或直接PWM    │         │           │ │
-│   └──────┬───────┘         └──────────────┘         └─────┬─────┘ │
-│          │                                                 │       │
-│          │  ┌──────────┐                                  │       │
-│          │  │ 定时/中断 │                                  │       │
-│          │  │ 强度控制 │                                  │       │
-│          │  │ 模式切换 │                                  │       │
-│          │  └──────────┘                                  │       │
-│          │                                                 │       │
-│          ▼                                                 ▼       │
-│   ┌──────────────┐         ┌──────────────┐         ┌───────────┐ │
-│   │   ADC采样    │         │   隔离驱动   │         │ 换能器匹配 │ │
-│   │ 电流/电压/温度│◀────────│  (光耦/磁耦) │◀────────│  网络     │ │
-│   └──────────────┘         └──────────────┘         └───────────┘ │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-</code></pre>
+<div style="margin:24px 0;">
+<h4 style="color:#2874a6;margin-bottom:14px;">📐 主控与信号链路详细框图</h4>
+<div class="mermaid">
+graph LR
+    subgraph MCU["🧠 主控制器"]
+        M1[STM32 / GD32<br/>Cortex-M4]
+        M2[定时 / 中断<br/>强度控制 / 模式切换]
+    end
+
+    subgraph SIG["📶 信号生成"]
+        S1[DDS芯片<br/>AD9834]
+        S2[低通滤波器]
+    end
+
+    subgraph AMP["🔊 功率驱动"]
+        A1[前置放大]
+        A2[D类功率放大]
+        A3[隔离驱动<br/>光耦 / 磁耦]
+    end
+
+    subgraph MATCH["🎯 匹配网络"]
+        N1[阻抗匹配网络<br/>LC / T型]
+    end
+
+    subgraph TRAN["💆 换能器"]
+        T1[压电陶瓷<br/>PZT-8]
+    end
+
+    subgraph FB["📡 反馈采样"]
+        F1[ADC采样<br/>电流 / 电压 / 温度]
+    end
+
+    M1 -- SPI --> S1
+    M1 --> M2
+    S1 --> S2
+    S2 --> A1
+    A1 --> A2
+    A2 --> N1
+    A3 --> A2
+    N1 --> T1
+    T1 -- 反馈 --> F1
+    F1 --> M1
+    A3 -.-> N1
+
+    style MCU fill:#ebf5fb,stroke:#3498db,stroke-width:2px
+    style SIG fill:#eafaf1,stroke:#27ae60,stroke-width:2px
+    style AMP fill:#fef9e7,stroke:#f39c12,stroke-width:2px
+    style MATCH fill:#f5eef8,stroke:#9b59b6,stroke-width:2px
+    style TRAN fill:#fdedec,stroke:#e74c3c,stroke-width:2px
+    style FB fill:#e8f6f3,stroke:#1abc9c,stroke-width:2px
+</div>
+</div>
 <hr>
 <h2>三、核心模块技术解析</h2>
 <h3>3.1 主控制器单元 (MCU)</h3>
@@ -467,22 +512,20 @@ footer {
 </ul>
 <h3>3.4 换能器（治疗头核心）</h3>
 <p><strong>结构</strong>：</p>
-<pre><code>┌─────────────────────────────────────┐
-│           治疗头外壳                  │
-│  ┌───────────────────────────────┐  │
-│  │      变幅杆/辐射面 (铝/钛合金)  │  │  ← 接触皮肤
-│  └───────────────┬───────────────┘  │
-│                  │                   │
-│  ┌───────────────▼───────────────┐  │
-│  │      压电陶瓷片 (PZT-4/PZT-8)  │  │  ← 电→机械转换
-│  │      直径通常 30mm ~ 50mm     │  │
-│  └───────────────────────────────┘  │
-│                  │                   │
-│  ┌───────────────▼───────────────┐  │
-│  │      背衬材料 (钨粉+环氧树脂)   │  │  ← 吸收反向辐射
-│  └───────────────────────────────┘  │
-└─────────────────────────────────────┘
-</code></pre>
+<div style="margin:24px 0;">
+<h4 style="color:#2874a6;margin-bottom:14px;">📐 治疗头 — 换能器结构</h4>
+<div style="display:flex;flex-direction:column;align-items:center;width:300px;margin:0 auto;border-radius:12px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,0.1);font-family:inherit;">
+  <div style="background:#eaf2f8;color:#1a5276;padding:8px 16px;text-align:center;width:100%;font-size:0.8rem;font-weight:600;">⬆ 接触皮肤 / 耦合凝胶</div>
+  <div style="background:#3498db;color:#fff;padding:14px 16px;text-align:center;width:100%;font-weight:bold;font-size:1rem;">变幅杆 / 辐射面</div>
+  <div style="background:#5dade2;color:#fff;padding:8px 16px;text-align:center;width:100%;font-size:0.85rem;">铝合金 / 钛合金</div>
+  <div style="background:#1a5276;color:#fff;padding:18px 16px;text-align:center;width:100%;font-weight:bold;font-size:1.05rem;">压电陶瓷片 PZT-8</div>
+  <div style="background:#2874a6;color:#fff;padding:8px 16px;text-align:center;width:100%;font-size:0.85rem;">直径 30 ~ 50 mm</div>
+  <div style="background:#85c1e9;color:#1a5276;padding:6px 16px;text-align:center;width:100%;font-size:0.8rem;font-weight:600;">电 → 机械能量转换</div>
+  <div style="background:#aed6f1;color:#1a5276;padding:14px 16px;text-align:center;width:100%;font-weight:bold;font-size:1rem;">背衬材料</div>
+  <div style="background:#d6eaf8;color:#1a5276;padding:8px 16px;text-align:center;width:100%;font-size:0.85rem;border-radius:0 0 12px 12px;">钨粉 + 环氧树脂 — 吸收反向辐射</div>
+</div>
+<p style="text-align:center;color:#5d6d7e;font-size:0.85rem;margin-top:12px;">超声波传播方向：从下往上 → 皮肤表面</p>
+</div>
 <p><strong>自主设计要点</strong>：</p>
 <ul>
 <li>压电材料：推荐 <strong>PZT-8</strong>（高功率型，机械品质因数 Qm 高，发热小）</li>
@@ -545,28 +588,57 @@ footer {
 </ul>
 <hr>
 <h2>四、软件架构概要</h2>
-<pre><code class="language-text">┌─────────────────────────────────────────────────────────────┐
-│                      应用层 (UI/业务逻辑)                      │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
-│  │ 治疗界面  │ │ 参数设置  │ │ 用户管理  │ │ 系统设置  │       │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
-├─────────────────────────────────────────────────────────────┤
-│                      中间件层                                  │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
-│  │ 触摸屏驱动│ │ 文件系统  │ │ 日志记录  │ │ 通信协议  │       │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
-├─────────────────────────────────────────────────────────────┤
-│                      驱动层                                    │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
-│  │ DDS驱动   │ │ ADC采样   │ │ 功放控制  │ │ 传感器驱动│       │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
-├─────────────────────────────────────────────────────────────┤
-│                      硬件抽象层 (HAL)                          │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
-│  │  GPIO    │ │   SPI    │ │   I2C    │ │   TIM    │       │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
-└─────────────────────────────────────────────────────────────┘
-</code></pre>
+<div style="margin:24px 0;">
+<h4 style="color:#2874a6;margin-bottom:14px;">📐 软件架构分层图</h4>
+<div class="mermaid">
+graph TB
+    subgraph APP["📱 应用层"]
+        A1[治疗界面]
+        A2[参数设置]
+        A3[用户管理]
+        A4[系统设置]
+    end
+
+    subgraph MID["⚙️ 中间件层"]
+        B1[触摸屏驱动]
+        B2[文件系统]
+        B3[日志记录]
+        B4[通信协议]
+    end
+
+    subgraph DRV["🔌 驱动层"]
+        C1[DDS驱动]
+        C2[ADC采样]
+        C3[功放控制]
+        C4[传感器驱动]
+    end
+
+    subgraph HAL["🔧 硬件抽象层 HAL"]
+        D1[GPIO]
+        D2[SPI]
+        D3[I2C]
+        D4[TIM定时器]
+    end
+
+    A1 --> B1
+    A2 --> B2
+    A3 --> B3
+    A4 --> B4
+    B1 --> C1
+    B2 --> C3
+    B3 --> C2
+    B4 --> C4
+    C1 --> D2
+    C2 --> D1
+    C3 --> D4
+    C4 --> D3
+
+    style APP fill:#ebf5fb,stroke:#3498db,stroke-width:2px
+    style MID fill:#eafaf1,stroke:#27ae60,stroke-width:2px
+    style DRV fill:#fef9e7,stroke:#f39c12,stroke-width:2px
+    style HAL fill:#f5eef8,stroke:#9b59b6,stroke-width:2px
+</div>
+</div>
 <p><strong>关键算法模块</strong>：</p>
 <ol>
 <li><strong>频率跟踪</strong>：换能器谐振频率会随温度漂移，需实现自动频率跟踪（最大导纳法或相位锁定法）</li>
